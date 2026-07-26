@@ -11,6 +11,10 @@ load_dotenv(PROJECT_ROOT / ".env")
 class Settings:
     ollama_host: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     ollama_model: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+    embedding_model: str = os.getenv(
+    "OLLAMA_EMBEDDING_MODEL",
+    "nomic-embed-text",
+)
     data_dir: Path = PROJECT_ROOT / "data"
     temp_dir: Path = PROJECT_ROOT / "temp"
 
