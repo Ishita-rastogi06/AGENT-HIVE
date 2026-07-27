@@ -1,4 +1,4 @@
-"""Small, application-specific wrapper around the local Ollama client."""
+"""Application-specific wrapper around the local Ollama client."""
 
 from typing import Optional
 
@@ -8,10 +8,11 @@ from src.config import settings
 
 
 class OllamaClient:
-    """Send concise requests to the local Ollama model."""
+    """Send requests to the local Ollama model."""
 
-    MAX_RESPONSE_TOKENS = 220
-    CONTEXT_WINDOW = 2048
+    # Enough room for complete code, explanations, and test cases.
+    MAX_RESPONSE_TOKENS = 1200
+    CONTEXT_WINDOW = 4096
 
     def __init__(self) -> None:
         self.client = Client(host=settings.ollama_host)
@@ -22,7 +23,7 @@ class OllamaClient:
         prompt: str,
         system: str = "You are a helpful AI assistant.",
     ) -> Optional[str]:
-        """Return a concise model response, or None if Ollama is unavailable."""
+        """Return the model response, or None if Ollama is unavailable."""
         try:
             response = self.client.chat(
                 model=self.model,
@@ -36,7 +37,9 @@ class OllamaClient:
                     "num_ctx": self.CONTEXT_WINDOW,
                 },
             )
-            return response["message"]["content"].strip()
+
+            content = response.get("message", {}).get("content", "")
+            return content.strip() if content else None
 
         except Exception:
             return None

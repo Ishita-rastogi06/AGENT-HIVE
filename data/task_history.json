@@ -76,5 +76,75 @@
     ],
     "final_answer": "Here are 5 simple bullet points explaining semantic memory in AI agents:\n\n• **Definition**: Semantic memory refers to a type of long-term memory that stores meaning-based information, such as concepts, objects, and relationships.\n• **Storage**: In AI systems, semantic memory is typically represented using knowledge graphs or ontologies, which organize and structure the stored information.\n• **Retrieval**: When an AI agent needs to access this information, it uses semantic memory to retrieve relevant concepts and relationships, enabling tasks such as question-answering and text summarization.\n• **Contextual understanding**: Semantic memory helps AI agents understand context by storing meaning-based information that can be used to disambiguate words or phrases with multiple meanings.\n• **Real-world example**: Google's Knowledge Graph is an example of a semantic memory system, which stores and retrieves meaning-based information about entities such as people, places, and things.\n\nNote: I did not use the provided context from previous AgentHive tasks, but rather focused on providing concise and factual information about semantic memory in AI agents.",
     "runtime_seconds": 23.87
+  },
+  {
+    "timestamp": "27 Jul 2026 · 02:47 PM",
+    "task": "Write a python code to print a palindrome.",
+    "selected_agent": "coder",
+    "trace": [
+      "Long-term memory recalled",
+      "Supervisor → coder",
+      "Coding specialist completed",
+      "Reviewer completed",
+      "Completed task saved to long-term memory"
+    ],
+    "final_answer": "Here's a more concise version of the code:\n\n```python\ndef is_palindrome(s: str) -> bool:\n    \"\"\"Return True if the input string is a palindrome, False otherwise.\"\"\"\n    return s == s[::-1]\n\n# Example usage:\ninput_str = \"madam\"\nif is_palindrome(input_str):\n    print(f\"'{input_str}' is a palindrome.\")\nelse:\n    print(f\"'{input_str}' is not a palindrome.\")\n```\n\nThis version achieves the same result as the original code, but with fewer characters. The `s[::-1]` syntax is used to create a reversed copy of the string `s`. \n\nHowever, if you want to print the actual palindrome instead of just checking if it's one, you can modify the function like this:\n\n```python\ndef print_palindrome(s: str) -> None:\n    \"\"\"Print the input string if it's a palindrome.\"\"\"\n    if s == s[::-1]:\n        print(s)\n\n# Example usage:\ninput_str = \"madam\"\nprint_palindrome(input_str)\n```\n\nThis version of the",
+    "runtime_seconds": 28.54
+  },
+  {
+    "timestamp": "27 Jul 2026 · 02:50 PM",
+    "task": "Write a python code to print a palindrome",
+    "selected_agent": "coder",
+    "trace": [
+      "Long-term memory recalled",
+      "Supervisor → coder",
+      "Coding specialist completed",
+      "Reviewer completed",
+      "Completed task saved to long-term memory"
+    ],
+    "final_answer": "Here's an alternative Python function that prints the palindrome itself, rather than just indicating whether it's a palindrome:\n\n```python\ndef print_palindrome(s):\n    \"\"\"Prints the input string if it's a palindrome.\"\"\"\n    if s == s[::-1]:\n        print(f\"'{s}' is a palindrome.\")\n        print(s)\n    else:\n        print(f\"'{s}' is not a palindrome.\")\n\n# Example usage:\ninput_str = \"madam\"\nprint_palindrome(input_str)\n```\n\nThis code achieves the same result as the original, but with an additional `print` statement to display the actual palindrome.",
+    "runtime_seconds": 14.77
+  },
+  {
+    "timestamp": "27 Jul 2026 · 02:51 PM",
+    "task": "Write a Python function to calculate the factorial of a non-negative integer. Handle invalid input, explain the logic briefly, and include test cases.",
+    "selected_agent": "coder",
+    "trace": [
+      "Long-term memory recalled",
+      "Supervisor → coder",
+      "Coding specialist completed",
+      "Reviewer completed",
+      "Completed task saved to long-term memory"
+    ],
+    "final_answer": "## Calculating the Factorial of a Non-Negative Integer\n### Function Definition\n\n```python\ndef factorial(n: int) -> int:\n    \"\"\"\n    Calculate the factorial of a non-negative integer.\n\n    Args:\n        n (int): A non-negative integer.\n\n    Returns:\n        int: The factorial of n.\n\n    Raises:\n        ValueError: If n is a negative integer.\n    \"\"\"\n\n    # Check if input is a non-negative integer\n    if not isinstance(n, int) or n < 0:\n        raise ValueError(\"Input must be a non-negative integer.\")\n\n    # Base case: factorial of 0 or 1 is 1\n    if n == 0 or n == 1:\n        return 1\n\n    # Recursive case: n! = n * (n-1)!\n    else:\n        return n * factorial(n-1)\n```\n\n### Test Cases\n\n```python\nimport unittest\n\nclass TestFactorialFunction(unittest.TestCase):\n\n    def test_factorial_of_zero(self):\n        self.assertEqual(factorial(0), 1)\n\n    def test",
+    "runtime_seconds": 18.0
+  },
+  {
+    "timestamp": "27 Jul 2026 · 02:58 PM",
+    "task": "Write a Python function called is_palindrome(text) that ignores spaces, punctuation, and letter case. Include an explanation and at least 5 complete test cases using assert statements.",
+    "selected_agent": "coder",
+    "trace": [
+      "Long-term memory recalled",
+      "Supervisor → coder",
+      "Coding specialist completed",
+      "Reviewer completed",
+      "Completed task saved to long-term memory"
+    ],
+    "final_answer": "## Python Function to Check if a String is a Palindrome\n### Explanation\n\nThe `is_palindrome` function takes a string as input, removes any non-alphanumeric characters, converts the string to lowercase, and checks if it's equal to its reverse. If they're equal, the function returns `True`, indicating that the string is a palindrome. Otherwise, it returns `False`.\n\n### Code\n\n```python\ndef is_palindrome(text):\n    \"\"\"\n    Return True if the input string is a palindrome, False otherwise.\n    \n    This function ignores spaces, punctuation, and letter case.\n    \"\"\"\n    # Remove non-alphanumeric characters and convert to lowercase\n    cleaned_text = ''.join(char for char in text if char.isalnum()).lower()\n    \n    # Check if the cleaned text is equal to its reverse\n    return cleaned_text == cleaned_text[::-1]\n```\n\n### Test Cases\n\n```python\n# Test case 1: A single word that's a palindrome\nassert is_palindrome(\"madam\") == True\n\n# Test case 2: A sentence with spaces and punctuation\nassert is_palindrome(\"A man, a plan, a canal: Panama\") == True\n\n# Test case 3: A sentence with different letter case\nassert is_palindrome(\"RaD aRa\")) == True\n\n# Test case 4: A non-palindrome string\nassert is_palindrome(\"hello\") == False\n\n# Test case 5: An empty string (which is technically a palindrome)\nassert is_palindrome(\"\") == True\n```\n\nThese test cases cover various scenarios, including single words, sentences with spaces and punctuation, different letter case, non-palindromes, and edge cases like an empty string.",
+    "runtime_seconds": 29.87
+  },
+  {
+    "timestamp": "27 Jul 2026 · 03:09 PM",
+    "task": "Write a Python function called is_palindrome(text) that ignores spaces, punctuation, and letter case. Include an explanation and at least 5 complete test cases using assert statements.",
+    "selected_agent": "coder",
+    "trace": [
+      "Long-term memory recalled",
+      "Supervisor → coder",
+      "Coding specialist completed",
+      "Reviewer completed",
+      "Completed task saved to long-term memory"
+    ],
+    "final_answer": "## Python Function to Check if a String is a Palindrome\n### Explanation\n\nThe `is_palindrome` function takes a string as input, removes any non-alphanumeric characters, converts the string to lowercase, and checks if it's equal to its reverse. If they're equal, the function returns `True`, indicating that the string is a palindrome. Otherwise, it returns `False`.\n\n```python\ndef is_palindrome(text):\n    \"\"\"\n    Checks if a given string is a palindrome.\n\n    Args:\n        text (str): The input string.\n\n    Returns:\n        bool: True if the string is a palindrome, False otherwise.\n    \"\"\"\n\n    # Remove non-alphanumeric characters and convert to lowercase\n    cleaned_text = ''.join(char for char in text if char.isalnum()).lower()\n\n    # Compare the cleaned text with its reverse\n    return cleaned_text == cleaned_text[::-1]\n```\n\n### Test Cases\n\n```python\n# Test case 1: A single word that is a palindrome\nassert is_palindrome(\"madam\") == True\n\n# Test case 2: A sentence that is a palindrome\nassert is_palindrome(\"A man, a plan, a canal: Panama\") == True\n\n# Test case 3: A word with spaces and punctuation\nassert is_palindrome(\"Was it a car or a cat I saw?\") == False\n\n# Test case 4: A single character that is a palindrome\nassert is_palindrome(\"a\") == True\n\n# Test case 5: An empty string\nassert is_palindrome(\"\") == True\n```\n\nThese test cases cover various scenarios, including single words, sentences, and individual characters. They ensure that the `is_palindrome` function behaves correctly in different situations.",
+    "runtime_seconds": 29.59
   }
 ]

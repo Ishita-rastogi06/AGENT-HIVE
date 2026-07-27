@@ -25,6 +25,9 @@ def apply_custom_styles() -> None:
         <style>
         :root { --ink:#111827; --muted:#64748b; --line:#e7ebf3; --hive:#f6b91a; --violet:#6d5dfc; }
         .stApp { background: #f7f8fc; color: var(--ink); }
+        /* Remove Streamlit's default dark top toolbar completely. */
+        header[data-testid="stHeader"], [data-testid="stToolbar"],
+        [data-testid="stDecoration"], #MainMenu, footer { display:none !important; }
         .block-container { max-width: 1320px; padding: 2rem 2.2rem 3.5rem; }
         [data-testid="stSidebar"] { background: #101827; border-right: 1px solid #243047; }
         [data-testid="stSidebar"] * { color: #e6edf9; }
@@ -54,6 +57,9 @@ def apply_custom_styles() -> None:
         /* Consistent breathing room between every Streamlit column. */
         [data-testid="stHorizontalBlock"] { gap:1.15rem !important; align-items:stretch; }
         [data-testid="column"] { min-width:0; }
+        /* Deliberate vertical space: prevents result-card rows from touching. */
+        .result-row-gap { height: 1.4rem; }
+        .page-section-gap { height: 1.1rem; }
         .stTextArea textarea { border-radius:12px; border:1px solid #dfe5f0; background:#fff; font-size:1rem; }
         .stTextArea textarea:focus { border-color:#7567f8; box-shadow:0 0 0 3px rgba(117,103,248,.12); }
         .stat-card { min-height:120px; background:#ffffff; border:1px solid #dfe6f0; border-radius:14px; padding:1.18rem 1.25rem; box-sizing:border-box; box-shadow:0 4px 14px rgba(15,23,42,.06); }
@@ -68,7 +74,8 @@ def apply_custom_styles() -> None:
         .hero-kicker { color:#fbd76a; font-size:.73rem; letter-spacing:.15em; font-weight:800; text-transform:uppercase; margin-bottom:.7rem; }
         .hero-title { font-size:2.15rem; line-height:1.12; letter-spacing:-.045em; font-weight:800; max-width:650px; position:relative; z-index:1; }
         .hero-copy { color:#d9dcff; margin-top:.7rem; max-width:590px; line-height:1.55; position:relative; z-index:1; }
-        .section-label { color:#7b8597; font-weight:800; letter-spacing:.12em; font-size:.7rem; text-transform:uppercase; margin:1.55rem 0 .55rem; }
+        .section-label { color:#7b8597; font-weight:800; letter-spacing:.12em; font-size:.7rem; text-transform:uppercase; margin:1.0rem 0 .4rem; }
+        .quick-start-label { margin-top:.75rem !important; margin-bottom:.25rem !important; }
         .agent-card { min-height:176px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:1.25rem; box-shadow:0 3px 12px rgba(24,39,75,.035); }
         .agent-icon { width:38px; height:38px; border-radius:11px; display:inline-flex; align-items:center; justify-content:center; background:#f2efff; font-size:1.2rem; }
         .agent-name { margin-top:.8rem; color:#1b2537; font-weight:800; font-size:1.03rem; }
@@ -163,14 +170,15 @@ def show_result(result: dict[str, Any], elapsed_seconds: float | None = None) ->
     with d:
         render_stat_card("Runtime", f"{elapsed_seconds:.1f}s" if elapsed_seconds is not None else "Complete")
 
-    answer_col, trace_col = st.columns([1.7, 1], gap="medium")
+    # Keep the summary cards and result panels visually separate.
+    st.markdown('<div class="result-row-gap"></div>', unsafe_allow_html=True)
+    answer_col, trace_col = st.columns([1.7, 1], gap="large")
     with answer_col:
-        safe_answer = html.escape(str(answer)).replace("\n", "<br>")
-        st.markdown(
-            f'<div class="answer-box"><div class="eyebrow">Final response</div>'
-            f'<div class="answer-content">{safe_answer}</div></div>',
-            unsafe_allow_html=True,
-        )
+        # Use Streamlit Markdown rather than escaped HTML so lists, bold text,
+        # code blocks, indentation, and language syntax are shown correctly.
+        with st.container(border=True):
+            st.markdown('<div class="eyebrow">Final response</div>', unsafe_allow_html=True)
+            st.markdown(str(answer))
     with trace_col:
         trace_html = "".join(
             f'<div class="trace-row"><div class="trace-number">{index}</div>'
@@ -208,23 +216,33 @@ def render_dashboard_page() -> None:
     with cols[1]: render_agent_card("◌", "Specialist network", "Research and coding specialists produce focused, high-quality work.")
     with cols[2]: render_agent_card("✓", "Reviewer", "Checks the specialist output before a response is delivered.")
 
-    st.markdown('<div class="section-label">Quick start</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label quick-start-label">Quick start</div>', unsafe_allow_html=True)
     with st.container(border=True):
         left, right = st.columns([4, 1])
         with left:
             st.markdown("### Start an orchestrated task")
             st.caption("Ask a research question, explore a technical concept, or request implementation help.")
         with right:
-            if st.button("Open workspace", type="primary", use_container_width=True):
-                st.session_state.page_navigation = "Workspace"
-                st.rerun()
+            # A callback runs before the navigation radio is created on the next refresh.
+            st.button(
+                "Open workspace",
+                type="primary",
+                use_container_width=True,
+                on_click=open_workspace,
+            )
+
+
+def open_workspace() -> None:
+    """Safely switch pages from a button callback."""
+    st.session_state.page_navigation = "Workspace"
 
 
 def render_workspace_page() -> None:
     st.title("Agent workspace")
     st.caption("Write a clear objective. AgentHive will take care of delegation, review, and memory.")
 
-    with st.container(border=True):
+    # A form submits the text field and button click together, so one click runs the task.
+    with st.form("agent_task_form", clear_on_submit=False, border=True):
         task = st.text_area(
             "Task objective",
             placeholder="Example: Compare REST and GraphQL for a mobile application, including when to choose each approach.",
@@ -234,9 +252,13 @@ def render_workspace_page() -> None:
         )
         left, right = st.columns([1, 5])
         with left:
-            run = st.button("Run task", type="primary", use_container_width=True, disabled=not task.strip())
+            run = st.form_submit_button("Run task", type="primary", use_container_width=True)
         with right:
             st.caption("The workflow uses your local Ollama model. Results are stored in local task history.")
+
+    if run and not task.strip():
+        st.warning("Please enter a task objective before running the workflow.")
+        return
 
     if run:
         start = time.perf_counter()
