@@ -1,5 +1,29 @@
+# ── UI ────────────────────────────────────────────────────────────────────────
 streamlit>=1.37.0
-langgraph>=0.2.0
-ollama>=0.3.0
-python-dotenv>=1.0.1
+
+# ── Orchestration ─────────────────────────────────────────────────────────────
+# Pin to the installed minor series; update intentionally when upgrading.
+langgraph==1.2.11
+langgraph-checkpoint-sqlite>=3.1.0
+
+# ── LLM ──────────────────────────────────────────────────────────────────────
+# Pin to the installed version whose Pydantic API shape is relied on
+# (ChatResponse.message.content attribute access — see src/llm/ollama_client.py).
+ollama==0.6.2
+
+# ── Long-term memory (vector store) ──────────────────────────────────────────
 chromadb>=0.5.0
+
+# ── Short-term memory (Phase 2 — task-scoped Redis working memory) ───────────
+redis>=5.0.0
+
+# ── Database Driver & Security ────────────────────────────────────────────────
+psycopg2-binary>=2.9.9
+bcrypt>=4.0.0
+
+# ── Config & environment ──────────────────────────────────────────────────────
+python-dotenv>=1.0.1
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest>=8.0.0
+

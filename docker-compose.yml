@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agenthive_app
+    ports:
+      - "8501:8501"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DB_URL=postgresql://agenthive:agenthive@postgres:5432/agenthive
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.2:3b
+      - OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+      - ENABLE_OFFLINE_FALLBACK=true
+      - CHROMA_MEMORY_PATH=/app/data/chroma_memory
+      - SQLITE_DB_PATH=/app/data/agent_hive.db
+    volumes:
+      - ./data:/app/data
+      - ./workspace:/app/workspace
+      - ./src:/app/src
+      - ./app.py:/app/app.py
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: agenthive_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: agenthive_postgres
+    environment:
+      - POSTGRES_USER=agenthive
+      - POSTGRES_PASSWORD=agenthive
+      - POSTGRES_DB=agenthive
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenthive -d agenthive"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
