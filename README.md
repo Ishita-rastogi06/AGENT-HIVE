@@ -25,7 +25,7 @@ Long-Term Semantic Memory (ChromaDB): Embedded via nomic-embed-text. Stores past
 3. <b>Human-in-the-Loop Safety & Checkpointing-</b> <br>
 LangGraph 1.2.11 SQLite Saver (SqliteSaver): Thread states persist to disk (data/agent_hive.db), surviving Streamlit reruns and process restarts.
 Pre-Execution Sensitive Operation Detection: Pauses prior to non-read-only SQL statements (INSERT, UPDATE), non-idempotent HTTP methods (POST, PUT, DELETE), or file-write code operations.
-Granular Approvals: Notify, Approve Action, Approve Plan (bypass future step pauses), and Take Over (manual human response override).
+Granular Approvals: Notify, Approve Action, Approve Plan (bypass future step pauses), and Take Over (manual human response override).<br>
 4.<b> Trace Explorer & Replay Engine -</b> <br>
 Unified Execution Trace: Combines LangGraph checkpoint snapshots, tool audit JSONL logs (data/tool_calls.jsonl), and human approval audit logs into a single step-by-step tree.
 Replay System:
