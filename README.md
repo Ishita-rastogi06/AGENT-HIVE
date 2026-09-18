@@ -1,40 +1,72 @@
 # 🐝 AgentHive
 
-**AgentHive** is a production-grade, local-first multi-agent workspace powered by [LangGraph 1.2.11](https://github.com/langchain-ai/langgraph), [Ollama](https://ollama.com/), Redis, ChromaDB, and Streamlit.
+> **Autonomous Local Multi-Agent Workspace with Human-in-the-Loop Governance & Persistent Memory**
 
----
+<br>
 
-## 🛠️ Tech Stack
+**AgentHive** is an enterprise-grade, local-first multi-agent orchestration platform powered by **[LangGraph 1.2.11](https://github.com/langchain-ai/langgraph)**, **[Ollama](https://ollama.com/)**, **Redis**, **ChromaDB**, and **Streamlit**. 
+
+Designed for complete data privacy and offline autonomy, AgentHive coordinates a team of specialized AI agents — **Supervisor, Coder, Data Specialist, Researcher, Writer, and Reviewer** — to break down complex tasks, execute sandboxed code, perform SQL database operations, and retrieve long-term vector memories without relying on third-party cloud APIs.
+
+<br>
+
+### 🌟 Key Highlights
+
+- 🔒 **100% Local & Private**: Powered locally via Ollama (`llama3.2:3b`) and ChromaDB vector embeddings (`nomic-embed-text`).
+- 🛡️ **Human-in-the-Loop Governance**: Real-time safety gates interrupt sensitive operations (SQL `INSERT`/`UPDATE`, file writes, outbound network calls) for human review.
+- 🧠 **Dual-Layer Memory Engine**: Sub-millisecond task-scoped working memory (Redis) + persistent semantic recall (ChromaDB).
+- 🧪 **AST-Validated Python Sandbox**: Secure code execution with timeout enforcement and strict output capture.
+- 🔍 **Execution Trace Explorer**: Interactive graph visualizer, step-by-step tree auditor, and full replay/diff engine.
+
+<br>
+<hr>
+<br>
+
+### 🛠️ Tech Stack
 
 | Component | Tool / Library | Version | Why This Choice |
 | :--- | :--- | :--- | :--- |
 | **Language** | Python | `3.13` | Modern typing semantics, speed improvements, and strict async runtime safety. |
-| **Orchestration** | LangGraph | `1.2.11` | Native DAG state machine support with pre-execution interrupts (`interrupt()`) and Pregel loop controls. |
+| **Orchestration** | LangGraph | `1.2.11` | Native DAG state machine with pre-execution interrupts (`interrupt()`) & Pregel loop controls. |
 | **LLM Runtime** | Ollama | `0.6.2` | Local GPU-accelerated LLM inference without cloud API costs or data leakage risks. |
 | **Short-Term Memory** | Redis | `>=5.0.0` | Sub-millisecond task-scoped key-value working memory with TTL auto-expiration per `task_id`. |
-| **Long-Term Memory** | ChromaDB | `>=0.5.0` | Embedded local vector database for semantic memory retrieval (`nomic-embed-text`) without dedicated server overhead. |
-| **Checkpointing** | SqliteSaver (`langgraph-checkpoint-sqlite`) | `>=3.1.0` | Thread-safe disk-backed checkpointing surviving Streamlit reruns without requiring Postgres container overhead. |
-| **UI Framework** | Streamlit | `>=1.37.0` | Rapid local interactive dashboard rendering customized with strict Sapphire/Spruce CSS visual design. |
+| **Long-Term Memory** | ChromaDB | `>=0.5.0` | Embedded local vector database for semantic memory retrieval (`nomic-embed-text`). |
+| **Checkpointing** | SqliteSaver | `>=3.1.0` | Thread-safe disk-backed checkpointing surviving Streamlit reruns (`langgraph-checkpoint-sqlite`). |
+| **UI Framework** | Streamlit | `>=1.37.0` | Rapid local interactive dashboard with custom Sapphire/Spruce CSS visual design. |
 
-## 🎯 Design Decisions
+<br>
+<hr>
+<br>
 
-- **Local-First LLM Architecture**: AgentHive is intentionally built on Ollama (`llama3.2:3b`) and local vector embeddings (`nomic-embed-text`) to guarantee zero cloud API costs, complete privacy, and offline capability. The LLM access layer is decoupled inside `src/llm/ollama_client.py`; swapping in a cloud provider like OpenAI or Claude simply requires writing an adapter class following the same client contract, making provider choice an intentional extension point rather than an architectural lock-in.
-- **Single-Instance Disk Checkpointing (`SqliteSaver`)**: Thread state checkpointing uses LangGraph's disk-backed `SqliteSaver` (`data/agent_hive.db`) to provide reliable state persistence across Streamlit reruns and process restarts without forcing users to manage heavy database infrastructure. If horizontal scaling across multiple application nodes is ever required, LangGraph exposes a drop-in Postgres-backed equivalent (`AsyncPostgresSaver` / `PostgresSaver` from `langgraph-checkpoint-postgres`) that uses identical state schemas.
-- **Deny-by-Default Outbound Network Security**: The `api_call` tool enforces a strict host allowlist configured via `ALLOWED_API_DOMAINS` to prevent autonomous agents from making unauthorized outbound HTTP requests or data exfiltration calls. This is a deliberate security control designed to enforce the principle of least privilege, requiring explicit domain additions rather than unrestricted web access.
+### 🎯 Design Decisions
 
-### ⚠️ Known System Constraints & Architectural Boundaries
+- **Local-First LLM Architecture**: Built on Ollama (`llama3.2:3b`) and local vector embeddings (`nomic-embed-text`) for zero cloud API costs and offline capability. Decoupled inside `src/llm/ollama_client.py` for easy provider swapping.
 
-- **Targeted Deterministic Guards vs. General Fact-Checking**: The Reviewer agent incorporates targeted, deterministic python overrides for specific known failure modes (e.g. mandatory SQL date truncation for monthly queries, and specific known acronym hallucinations like `FAME`/`Faradere`). For general-purpose output, the Reviewer relies on prompt instructions (Rule 6: Web-Search Grounding). It is a targeted requirement auditor and safety guard, **not a universal, general-purpose fact-checking engine** for arbitrary external facts or figures.
-- **LLM Factual Grounding Capacity**: Small local models (`llama3.2:3b`) perform excellent local reasoning, code generation, and structured outputs, but open-ended factual knowledge across arbitrary external domains remains bounded by parameter capacity. Grounding against `web_search` tool results mitigates domain hallucinations, but open-ended fact verification remains an inherent model capacity boundary.
-- **Graceful Memory Fallback**: When optional infrastructure like Redis is not installed, short-term working memory gracefully falls back to thread-safe in-memory Python dictionaries without throwing runtime exceptions.
+- **Single-Instance Disk Checkpointing (`SqliteSaver`)**: Thread state persists to disk (`data/agent_hive.db`) across Streamlit reruns without requiring Postgres container overhead.
 
----
+- **Deny-by-Default Outbound Network Security**: The `api_call` tool enforces a strict host allowlist configured via `ALLOWED_API_DOMAINS` to prevent unauthorized outbound HTTP requests.
 
-## 🏗️ System Architecture
+<br>
 
-AgentHive orchestrates autonomous specialists through a stateful graph pipeline with human-in-the-loop safety gates, persistent two-tier memory, and checkpointed execution traces.
+#### ⚠️ Known System Constraints & Architectural Boundaries
 
-```
+- **Targeted Deterministic Guards vs. General Fact-Checking**: The Reviewer incorporates targeted python overrides for specific failure modes. It is a safety auditor, not a universal general-purpose fact checker.
+
+- **LLM Factual Grounding Capacity**: Small local models (`llama3.2:3b`) have parameter limits; grounding against `web_search` mitigates hallucinations.
+
+- **Graceful Memory Fallback**: When Redis is absent, short-term memory gracefully falls back to thread-safe in-memory Python dictionaries.
+
+<br>
+<hr>
+<br>
+
+### 🏗️ System Architecture
+
+AgentHive orchestrates autonomous specialists through a stateful graph pipeline with human-in-the-loop safety gates, two-tier memory, and checkpointed traces.
+
+<br>
+
+```text
                      ┌─────────────────────────────────────────┐
                      │          User Request / Task            │
                      └────────────────────┬────────────────────┘
@@ -60,7 +92,7 @@ AgentHive orchestrates autonomous specialists through a stateful graph pipeline 
     │          Specialist Network          │     │  SQLite Approval UI  │
     │ ┌───────────┬─────────┬───────┬────┐ │     │ (Human Review/Resume)│
     │ │ Research  │ Coder   │ Data  │Writer│ │     └──────────┬───────────┘
-    │ └───────────┴─────────┴───────┴────┘ │                │
+    │ └───────────┴─────────┴───────┴────┐ │                │
     └───────────────────┬──────────────────┘                │ [Command(resume=...)]
                         │                                   │
                         └───────────────────┬───────────────┘
@@ -81,9 +113,11 @@ AgentHive orchestrates autonomous specialists through a stateful graph pipeline 
                      └─────────────────────────────────────────┘
 ```
 
----
+<br>
+<hr>
+<br>
 
-## 📁 Project Structure
+### 📁 Project Structure
 
 ```text
 src/
@@ -95,38 +129,25 @@ src/
 └── ui/              # Custom Streamlit views, layout renderers, and Sapphire/Spruce visual theme
 ```
 
----
+<br>
+<hr>
+<br>
 
-## ✨ Key System Capabilities
+### ✨ Key System Capabilities
 
-### 1. Multi-Agent Orchestration
-- **Supervisor**: Intelligently decomposes requests into ordered subtasks, assigning each subtask to the optimal specialist.
-- **Specialists Network**:
-  - **Research**: Factual research and information discovery using DuckDuckGo search (`web_search`).
-  - **Coder**: Python code generation, AST-validated sandbox execution (`python_sandbox`), and workspace file operations (`workspace_file`).
-  - **Data**: SQL database query execution (`db_query`), data analysis, and sandboxed Python statistical calculations (`python_sandbox`).
-  - **Writer**: Structured long-form prose, executive summaries, and reports, incorporating web search results (`web_search`) and external HTTP API data (`api_call`).
-- **Reviewer**: Evaluates specialist outputs against quality criteria, triggering retries or human escalations if confidence is low.
+1. **Multi-Agent Orchestration**: **Supervisor** (decomposes requests), **Specialists** (Research, Coder, Data, Writer), and **Reviewer** (evaluates quality and confidence).
 
-### 2. Two-Tier Memory System
-- **Short-Term Task Memory (Redis)**: Scoped per `task_id` with automatic TTL cleanup for intermediate subtask outputs.
-- **Long-Term Semantic Memory (ChromaDB)**: Embedded via `nomic-embed-text`. Stores past outcomes, tools used, domain facts, and user preferences scoped by `user_id`.
+2. **Two-Tier Memory System**: Task-scoped **Redis** short-term working memory + **ChromaDB** long-term semantic memory.
 
-### 3. Human-in-the-Loop Safety & Checkpointing
-- **LangGraph 1.2.11 SQLite Saver (`SqliteSaver`)**: Thread states persist to disk (`data/agent_hive.db`), surviving Streamlit reruns and process restarts.
-- **Pre-Execution Sensitive Operation Detection**: Pauses prior to non-read-only SQL statements (`INSERT`, `UPDATE`), non-idempotent HTTP methods (`POST`, `PUT`, `DELETE`), or file-write code operations.
-- **Granular Approvals**: `Notify`, `Approve Action`, `Approve Plan` (bypass future step pauses), and `Take Over` (manual human response override).
+3. **Human-in-the-Loop Safety**: **SqliteSaver** checkpointing + pre-execution interrupts on sensitive operations (`INSERT`, `UPDATE`, file writes).
 
-### 4. Trace Explorer & Replay Engine
-- **Unified Execution Trace**: Combines LangGraph checkpoint snapshots, tool audit JSONL logs (`data/tool_calls.jsonl`), and human approval audit logs into a single step-by-step tree.
-- **Replay System**:
-  - **Full Replay**: Re-run tasks from scratch with identical inputs under a new `task_id`.
-  - **Partial Replay**: Edit any step's output in the tree and resume execution.
-  - **Trace Diff Viewer**: Highlights step-by-step matches, divergences, and exact divergence points between original and replay runs.
+4. **Trace Explorer & Replay Engine**: Step-by-step interactive tree, full/partial replay engine, and trace diff viewer.
 
----
+<br>
+<hr>
+<br>
 
-## ⚙️ Environment Variables Reference
+### ⚙️ Environment Variables Reference
 
 | Variable | Default | Description |
 | :--- | :--- | :--- |
@@ -143,86 +164,76 @@ src/
 | `SANDBOX_TIMEOUT_SECONDS` | `10` | Timeout in seconds for Python sandbox code execution. |
 | `API_TIMEOUT_SECONDS` | `15` | Timeout in seconds for outbound HTTP API tool calls. |
 | `MAXIMUM_TOOL_OUTPUT_CHARS` | `8000` | Maximum characters captured per tool output before truncation. |
-| `ALLOWED_API_DOMAINS` | `api.github.com,jsonplaceholder.typicode.com,api.duckduckgo.com` | Comma-separated allowlist of hostnames reachable by API tools. |
-| `REDIS_URL` | `""` | Connection URL for Redis short-term working memory. When unset, falls back to in-memory short-term storage. |
+| `ALLOWED_API_DOMAINS` | `api.github.com`,<br>`jsonplaceholder.typicode.com`,<br>`api.duckduckgo.com` | Comma-separated allowlist of hostnames reachable by API tools. |
+| `REDIS_URL` | `""` | Connection URL for Redis short-term working memory (falls back to in-memory). |
 | `DATA_DIR` | `./data` | Local directory path for persistent SQLite database and audit logs. |
 | `TEMP_DIR` | `./temp` | Local directory path for transient scratch files. |
 | `WORKSPACE_DIR` | `./workspace` | Restricted workspace directory path for file tools. |
 
----
+<br>
+<hr>
+<br>
 
-## 📸 UI Screenshots
+### 📸 UI Screenshots
 
-<!-- Save screenshot files to docs/screenshots/ before viewing -->
 ![Dashboard](docs/screenshots/dashboard.png)
+
+<br>
+
 ![Trace Explorer](docs/screenshots/trace_explorer.png)
+
+<br>
+
 ![Approval Queue](docs/screenshots/approval_queue.png)
 
----
+<br>
+<hr>
+<br>
 
-## 🚀 Quick Start Guide
+### 🚀 Quick Start Guide
 
 > 💡 **Which mode should I use?**
-> - **Option A (Docker Compose)**: Best for live demos, portfolio walkthroughs, and clean single-command evaluation. Spins up the entire stack (Streamlit, Redis, PostgreSQL) in containerized isolation.
-> - **Option B (Native Streamlit Run)**: Recommended for active code development. Allows instant hot-reloading (`streamlit run app.py`) without rebuilding Docker images. Note that Option B coexists with Docker: the app connects to the background PostgreSQL (`localhost:5433`) and Redis (`localhost:6379`) containers started via `docker-compose up -d postgres redis`.
+> - **Option A (Docker Compose)**: Best for live demos and single-command evaluation. Spins up Streamlit, Redis, and PostgreSQL in containers.
+> - **Option B (Native Streamlit Run)**: Recommended for active development with instant hot-reloading (`streamlit run app.py`).
 
-### Prerequisites (Host Machine)
-Install [Ollama](https://ollama.com/) on the host machine and pull the required LLM and embedding models:
+<br>
 
+#### Prerequisites
 ```bash
 ollama pull llama3.2:3b
 ollama pull nomic-embed-text
 ```
 
----
-### Option A: Docker Compose (Recommended)
+<br>
 
+#### Option A: Docker Compose (Recommended)
 ```bash
 git clone https://github.com/Ishita-rastogi06/AgentHive.git
 cd AgentHive
 docker-compose up --build
 ```
+Open **`http://localhost:8501`**. Starts Streamlit (8501), Redis (6379), and PostgreSQL (host port `5433`).
 
-Open **`http://localhost:8501`**. Starts Streamlit (8501), Redis (6379), and PostgreSQL (host port `5433`) with auto-seeded demo data.
+<br>
 
-> **Note**: Inside Docker, the app uses `postgres:5432` (hardcoded in `docker-compose.yml`, overrides `.env`). To connect external tools like pgAdmin, use `postgresql://agenthive:agenthive@localhost:5433/agenthive`.
-
----
-
-### Option B: Native Local
-
+#### Option B: Native Local
 ```bash
 python -m venv .venv
 .venv\Scripts\Activate.ps1          # Windows
 source .venv/bin/activate           # Linux/macOS
 
 pip install -r requirements.txt
-cp .env.example .env                # DB_URL should be localhost:5433
+cp .env.example .env
 
-docker-compose up -d postgres redis # start once; runs in background
+docker-compose up -d postgres redis # start background services
 streamlit run app.py
 ```
 
----
+<br>
+<hr>
+<br>
 
-## 🎬 3-Minute End-to-End Walkthrough
-
-1. Open **`http://localhost:8501`** (Login / Signup page).
-2. Sign up or log in with your credentials (stored securely with `bcrypt` in PostgreSQL/SQLite).
-3. Navigate to **Workspace**, enter a complex objective (e.g. *"Query the customers table for active accounts and write a summary report"*).
-4. Watch the end-to-end execution:
-   - Recalls prior domain facts from ChromaDB.
-   - Decomposes task across `data` and `writer` specialists.
-   - Triggers pre-execution approval pause on non-read-only SQL `INSERT`.
-   - Resumes via `Command(resume=...)` from the **Approval Queue**.
-   - Reviewer approves, memory persists to ChromaDB.
-5. Navigate to **Trace Explorer** to inspect the full interactive execution trace tree!
-
----
-
-## 🧪 Running the Full Automated Test Suite
-
-AgentHive features a comprehensive test suite covering unit, integration, memory, checkpointer, approval, trace, and resilience scenarios.
+### 🧪 Automated Test Suite
 
 ```bash
 py -m pytest
@@ -231,3 +242,12 @@ py -m pytest
 ```text
 ================= 240 passed, 8 warnings in 114.91s (0:01:54) =================
 ```
+
+<br>
+<hr>
+<br>
+
+## 👩‍💻 Developer
+
+**Ishita Rastogi** (B.Tech CSE)  
+*GitHub*: [Ishita-rastogi06](https://github.com/Ishita-rastogi06)
