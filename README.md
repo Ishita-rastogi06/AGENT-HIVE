@@ -11,7 +11,7 @@ Designed for complete data privacy and offline autonomy, AgentHive coordinates a
 <br>
 
 ## 🎯 KEY HIGHLIGHTS
-1. <b>Multi-Agent Orchestration</b>
+1. <b>Multi-Agent Orchestration-</b> <br>
 Supervisor: Intelligently decomposes requests into ordered subtasks, assigning each subtask to the optimal specialist.
 Specialists Network:
 Research: Factual research and information discovery using DuckDuckGo search (web_search).
@@ -19,14 +19,14 @@ Coder: Python code generation, AST-validated sandbox execution (python_sandbox),
 Data: SQL database query execution (db_query), data analysis, and sandboxed Python statistical calculations (python_sandbox).
 Writer: Structured long-form prose, executive summaries, and reports, incorporating web search results (web_search) and external HTTP API data (api_call).
 Reviewer: Evaluates specialist outputs against quality criteria, triggering retries or human escalations if confidence is low.
-2. <b>Two-Tier Memory System</b>
+2. <b>Two-Tier Memory System-</b> <br>
 Short-Term Task Memory (Redis): Scoped per task_id with automatic TTL cleanup for intermediate subtask outputs.
 Long-Term Semantic Memory (ChromaDB): Embedded via nomic-embed-text. Stores past outcomes, tools used, domain facts, and user preferences scoped by user_id.
-3. <b>Human-in-the-Loop Safety & Checkpointing</b>
+3. <b>Human-in-the-Loop Safety & Checkpointing-</b> <br>
 LangGraph 1.2.11 SQLite Saver (SqliteSaver): Thread states persist to disk (data/agent_hive.db), surviving Streamlit reruns and process restarts.
 Pre-Execution Sensitive Operation Detection: Pauses prior to non-read-only SQL statements (INSERT, UPDATE), non-idempotent HTTP methods (POST, PUT, DELETE), or file-write code operations.
 Granular Approvals: Notify, Approve Action, Approve Plan (bypass future step pauses), and Take Over (manual human response override).
-4.<b> Trace Explorer & Replay Engine</b>
+4.<b> Trace Explorer & Replay Engine -</b> <br>
 Unified Execution Trace: Combines LangGraph checkpoint snapshots, tool audit JSONL logs (data/tool_calls.jsonl), and human approval audit logs into a single step-by-step tree.
 Replay System:
 Full Replay: Re-run tasks from scratch with identical inputs under a new task_id.
