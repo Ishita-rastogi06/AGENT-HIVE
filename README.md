@@ -10,13 +10,32 @@ Designed for complete data privacy and offline autonomy, AgentHive coordinates a
 
 <br>
 
-### 🌟 Key Highlights
+## 🎯 KEY HIGHLIGHTS
+1. Multi-Agent Orchestration
+Supervisor: Intelligently decomposes requests into ordered subtasks, assigning each subtask to the optimal specialist.
+Specialists Network:
+Research: Factual research and information discovery using DuckDuckGo search (web_search).
+Coder: Python code generation, AST-validated sandbox execution (python_sandbox), and workspace file operations (workspace_file).
+Data: SQL database query execution (db_query), data analysis, and sandboxed Python statistical calculations (python_sandbox).
+Writer: Structured long-form prose, executive summaries, and reports, incorporating web search results (web_search) and external HTTP API data (api_call).
+Reviewer: Evaluates specialist outputs against quality criteria, triggering retries or human escalations if confidence is low.
+2. Two-Tier Memory System
+Short-Term Task Memory (Redis): Scoped per task_id with automatic TTL cleanup for intermediate subtask outputs.
+Long-Term Semantic Memory (ChromaDB): Embedded via nomic-embed-text. Stores past outcomes, tools used, domain facts, and user preferences scoped by user_id.
+3. Human-in-the-Loop Safety & Checkpointing
+LangGraph 1.2.11 SQLite Saver (SqliteSaver): Thread states persist to disk (data/agent_hive.db), surviving Streamlit reruns and process restarts.
+Pre-Execution Sensitive Operation Detection: Pauses prior to non-read-only SQL statements (INSERT, UPDATE), non-idempotent HTTP methods (POST, PUT, DELETE), or file-write code operations.
+Granular Approvals: Notify, Approve Action, Approve Plan (bypass future step pauses), and Take Over (manual human response override).
+4. Trace Explorer & Replay Engine
+Unified Execution Trace: Combines LangGraph checkpoint snapshots, tool audit JSONL logs (data/tool_calls.jsonl), and human approval audit logs into a single step-by-step tree.
+Replay System:
+Full Replay: Re-run tasks from scratch with identical inputs under a new task_id.
+Partial Replay: Edit any step's output in the tree and resume execution.
+Trace Diff Viewer: Highlights step-by-step matches, divergences, and exact divergence points between original and replay runs.
 
-- 🔒 **100% Local & Private**: Powered locally via Ollama (`llama3.2:3b`) and ChromaDB vector embeddings (`nomic-embed-text`).
-- 🛡️ **Human-in-the-Loop Governance**: Real-time safety gates interrupt sensitive operations (SQL `INSERT`/`UPDATE`, file writes, outbound network calls) for human review.
-- 🧠 **Dual-Layer Memory Engine**: Sub-millisecond task-scoped working memory (Redis) + persistent semantic recall (ChromaDB).
-- 🧪 **AST-Validated Python Sandbox**: Secure code execution with timeout enforcement and strict output capture.
-- 🔍 **Execution Trace Explorer**: Interactive graph visualizer, step-by-step tree auditor, and full replay/diff engine.
+<br>
+<hr>
+<br>
 
 <br>
 <hr>
@@ -38,27 +57,6 @@ Designed for complete data privacy and offline autonomy, AgentHive coordinates a
 <hr>
 <br>
 
-### 🎯 Design Decisions
-
-- **Local-First LLM Architecture**: Built on Ollama (`llama3.2:3b`) and local vector embeddings (`nomic-embed-text`) for zero cloud API costs and offline capability. Decoupled inside `src/llm/ollama_client.py` for easy provider swapping.
-
-- **Single-Instance Disk Checkpointing (`SqliteSaver`)**: Thread state persists to disk (`data/agent_hive.db`) across Streamlit reruns without requiring Postgres container overhead.
-
-- **Deny-by-Default Outbound Network Security**: The `api_call` tool enforces a strict host allowlist configured via `ALLOWED_API_DOMAINS` to prevent unauthorized outbound HTTP requests.
-
-<br>
-
-#### ⚠️ Known System Constraints & Architectural Boundaries
-
-- **Targeted Deterministic Guards vs. General Fact-Checking**: The Reviewer incorporates targeted python overrides for specific failure modes. It is a safety auditor, not a universal general-purpose fact checker.
-
-- **LLM Factual Grounding Capacity**: Small local models (`llama3.2:3b`) have parameter limits; grounding against `web_search` mitigates hallucinations.
-
-- **Graceful Memory Fallback**: When Redis is absent, short-term memory gracefully falls back to thread-safe in-memory Python dictionaries.
-
-<br>
-<hr>
-<br>
 
 ### 🏗️ System Architecture
 
@@ -133,46 +131,6 @@ src/
 <hr>
 <br>
 
-### ✨ Key System Capabilities
-
-1. **Multi-Agent Orchestration**: **Supervisor** (decomposes requests), **Specialists** (Research, Coder, Data, Writer), and **Reviewer** (evaluates quality and confidence).
-
-2. **Two-Tier Memory System**: Task-scoped **Redis** short-term working memory + **ChromaDB** long-term semantic memory.
-
-3. **Human-in-the-Loop Safety**: **SqliteSaver** checkpointing + pre-execution interrupts on sensitive operations (`INSERT`, `UPDATE`, file writes).
-
-4. **Trace Explorer & Replay Engine**: Step-by-step interactive tree, full/partial replay engine, and trace diff viewer.
-
-<br>
-<hr>
-<br>
-
-### ⚙️ Environment Variables Reference
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `OLLAMA_HOST` | `http://localhost:11434` | URL of the local Ollama service endpoint. |
-| `OLLAMA_MODEL` | `llama3.2:3b` | Chat model used for all agent planning and execution calls. |
-| `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model used by ChromaDB long-term memory. |
-| `LLM_TIMEOUT_SECONDS` | `60` | Maximum seconds to wait for a single LLM response before timing out. |
-| `LLM_MAX_TOKENS` | `1200` | Maximum number of new tokens generated per LLM response. |
-| `LLM_CONTEXT_WINDOW` | `4096` | Context window size (in tokens) passed to Ollama. |
-| `LLM_TEMPERATURE` | `0.2` | Sampling temperature (0.0 = deterministic, 1.0 = creative). |
-| `ENABLE_OFFLINE_FALLBACK` | `true` | Enables deterministic local fallback messages when Ollama is unreachable. |
-| `MAX_RETRIES` | `2` | Maximum retry attempts by reviewer before human escalation. |
-| `LOW_CONFIDENCE_THRESHOLD` | `0.60` | Reviewer confidence score threshold triggering retries/escalation. |
-| `SANDBOX_TIMEOUT_SECONDS` | `10` | Timeout in seconds for Python sandbox code execution. |
-| `API_TIMEOUT_SECONDS` | `15` | Timeout in seconds for outbound HTTP API tool calls. |
-| `MAXIMUM_TOOL_OUTPUT_CHARS` | `8000` | Maximum characters captured per tool output before truncation. |
-| `ALLOWED_API_DOMAINS` | `api.github.com`,<br>`jsonplaceholder.typicode.com`,<br>`api.duckduckgo.com` | Comma-separated allowlist of hostnames reachable by API tools. |
-| `REDIS_URL` | `""` | Connection URL for Redis short-term working memory (falls back to in-memory). |
-| `DATA_DIR` | `./data` | Local directory path for persistent SQLite database and audit logs. |
-| `TEMP_DIR` | `./temp` | Local directory path for transient scratch files. |
-| `WORKSPACE_DIR` | `./workspace` | Restricted workspace directory path for file tools. |
-
-<br>
-<hr>
-<br>
 
 ### 📸 UI Screenshots
 
@@ -247,6 +205,55 @@ py -m pytest
 <hr>
 <br>
 
+### ⚙️ Environment Variables Reference
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `OLLAMA_HOST` | `http://localhost:11434` | URL of the local Ollama service endpoint. |
+| `OLLAMA_MODEL` | `llama3.2:3b` | Chat model used for all agent planning and execution calls. |
+| `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model used by ChromaDB long-term memory. |
+| `LLM_TIMEOUT_SECONDS` | `60` | Maximum seconds to wait for a single LLM response before timing out. |
+| `LLM_MAX_TOKENS` | `1200` | Maximum number of new tokens generated per LLM response. |
+| `LLM_CONTEXT_WINDOW` | `4096` | Context window size (in tokens) passed to Ollama. |
+| `LLM_TEMPERATURE` | `0.2` | Sampling temperature (0.0 = deterministic, 1.0 = creative). |
+| `ENABLE_OFFLINE_FALLBACK` | `true` | Enables deterministic local fallback messages when Ollama is unreachable. |
+| `MAX_RETRIES` | `2` | Maximum retry attempts by reviewer before human escalation. |
+| `LOW_CONFIDENCE_THRESHOLD` | `0.60` | Reviewer confidence score threshold triggering retries/escalation. |
+| `SANDBOX_TIMEOUT_SECONDS` | `10` | Timeout in seconds for Python sandbox code execution. |
+| `API_TIMEOUT_SECONDS` | `15` | Timeout in seconds for outbound HTTP API tool calls. |
+| `MAXIMUM_TOOL_OUTPUT_CHARS` | `8000` | Maximum characters captured per tool output before truncation. |
+| `ALLOWED_API_DOMAINS` | `api.github.com`,<br>`jsonplaceholder.typicode.com`,<br>`api.duckduckgo.com` | Comma-separated allowlist of hostnames reachable by API tools. |
+| `REDIS_URL` | `""` | Connection URL for Redis short-term working memory (falls back to in-memory). |
+| `DATA_DIR` | `./data` | Local directory path for persistent SQLite database and audit logs. |
+| `TEMP_DIR` | `./temp` | Local directory path for transient scratch files. |
+| `WORKSPACE_DIR` | `./workspace` | Restricted workspace directory path for file tools. |
+
+<br>
+<hr>
+<br>
+
+
+### 🎯 Design Decisions
+
+- **Local-First LLM Architecture**: Built on Ollama (`llama3.2:3b`) and local vector embeddings (`nomic-embed-text`) for zero cloud API costs and offline capability. Decoupled inside `src/llm/ollama_client.py` for easy provider swapping.
+
+- **Single-Instance Disk Checkpointing (`SqliteSaver`)**: Thread state persists to disk (`data/agent_hive.db`) across Streamlit reruns without requiring Postgres container overhead.
+
+- **Deny-by-Default Outbound Network Security**: The `api_call` tool enforces a strict host allowlist configured via `ALLOWED_API_DOMAINS` to prevent unauthorized outbound HTTP requests.
+
+<br>
+
+#### ⚠️ Known System Constraints & Architectural Boundaries
+
+- **Targeted Deterministic Guards vs. General Fact-Checking**: The Reviewer incorporates targeted python overrides for specific failure modes. It is a safety auditor, not a universal general-purpose fact checker.
+
+- **LLM Factual Grounding Capacity**: Small local models (`llama3.2:3b`) have parameter limits; grounding against `web_search` mitigates hallucinations.
+
+- **Graceful Memory Fallback**: When Redis is absent, short-term memory gracefully falls back to thread-safe in-memory Python dictionaries.
+
+<br>
+<hr>
+<br>
 ## 👩‍💻 Developer
 
 **Ishita Rastogi** (B.Tech CSE)  
